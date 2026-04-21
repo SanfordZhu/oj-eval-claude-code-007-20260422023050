@@ -79,6 +79,7 @@ void processLine(std::string line, Program &program, EvalState &state) {
         else if (kw == "GOTO") stmt = new GotoStatement(sc2);
         else if (kw == "IF") stmt = new IfStatement(sc2);
         else error("SYNTAX ERROR");
+        if (sc2.hasMoreTokens()) error("SYNTAX ERROR");
         program.setParsedStatement(ln, stmt);
         return;
     }
@@ -123,8 +124,6 @@ void processLine(std::string line, Program &program, EvalState &state) {
         return;
     }
     if (first == "INPUT") {
-        std::string name = scanner.nextToken();
-        if (scanner.getTokenType(name) != WORD) error("SYNTAX ERROR");
         InputStatement is(scanner);
         is.execute(state, program);
         return;

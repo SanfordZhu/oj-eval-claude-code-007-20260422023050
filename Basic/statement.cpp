@@ -13,7 +13,7 @@ Statement::Statement() = default;
 Statement::~Statement() = default;
 
 RemStatement::RemStatement(TokenScanner &scanner) {
-    comment = ""; // consume rest tokens as comment
+    comment = "";
     while (scanner.hasMoreTokens()) {
         std::string t = scanner.nextToken();
         if (!comment.empty()) comment += " ";
@@ -22,17 +22,11 @@ RemStatement::RemStatement(TokenScanner &scanner) {
 }
 void RemStatement::execute(EvalState &, Program &) {}
 
-LetStatement::LetStatement(TokenScanner &scanner) {
-    scanner.verifyToken("LET");
-    exp = parseExp(scanner);
-}
+LetStatement::LetStatement(TokenScanner &scanner) { exp = parseExp(scanner); }
 LetStatement::~LetStatement() { delete exp; }
 void LetStatement::execute(EvalState &state, Program &) { (void) exp->eval(state); }
 
-PrintStatement::PrintStatement(TokenScanner &scanner) {
-    scanner.verifyToken("PRINT");
-    exp = parseExp(scanner);
-}
+PrintStatement::PrintStatement(TokenScanner &scanner) { exp = parseExp(scanner); }
 PrintStatement::~PrintStatement() { delete exp; }
 void PrintStatement::execute(EvalState &state, Program &) {
     int v = exp->eval(state);
@@ -40,9 +34,9 @@ void PrintStatement::execute(EvalState &state, Program &) {
 }
 
 InputStatement::InputStatement(TokenScanner &scanner) {
-    scanner.verifyToken("INPUT");
     std::string name = scanner.nextToken();
-    if (scanner.getTokenType(name) != WORD) error("SYNTAX ERROR");
+    TokenType tt = scanner.getTokenType(name);
+    if (!(tt == WORD || tt == NUMBER)) error("SYNTAX ERROR");
     var = name;
 }
 void InputStatement::execute(EvalState &state, Program &) {
@@ -63,7 +57,6 @@ EndStatement::EndStatement() {}
 void EndStatement::execute(EvalState &, Program &program) { program.jumpTo(-1); }
 
 GotoStatement::GotoStatement(TokenScanner &scanner) {
-    scanner.verifyToken("GOTO");
     std::string tok = scanner.nextToken();
     if (scanner.getTokenType(tok) != NUMBER) error("SYNTAX ERROR");
     target = stringToInteger(tok);
@@ -71,8 +64,7 @@ GotoStatement::GotoStatement(TokenScanner &scanner) {
 void GotoStatement::execute(EvalState &, Program &program) { program.jumpTo(target); }
 
 IfStatement::IfStatement(TokenScanner &scanner) {
-    scanner.verifyToken("IF");
-    lhs = readE(scanner);
+    lhs = readE(scanner, 1); // stop before '='
     op = scanner.nextToken();
     if (!(op == "=" || op == "<" || op == ">")) error("SYNTAX ERROR");
     rhs = readE(scanner);
