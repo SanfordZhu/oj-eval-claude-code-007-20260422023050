@@ -9,56 +9,68 @@
  */
 
 #include "program.hpp"
-
-
+#include "Utils/error.hpp"
 
 Program::Program() = default;
 
-Program::~Program() = default;
+Program::~Program() {
+    clear();
+}
 
 void Program::clear() {
-    // Replace this stub with your own code
-    //todo
+    for (auto &p : parsed) delete p.second;
+    parsed.clear();
+    sources.clear();
+    jumpFlag = false;
+    jumpTarget = -1;
 }
 
 void Program::addSourceLine(int lineNumber, const std::string &line) {
-    // Replace this stub with your own code
-    //todo
+    removeSourceLine(lineNumber);
+    sources[lineNumber] = line;
 }
 
 void Program::removeSourceLine(int lineNumber) {
-    // Replace this stub with your own code
-    //todo
+    auto it = parsed.find(lineNumber);
+    if (it != parsed.end()) { delete it->second; parsed.erase(it); }
+    sources.erase(lineNumber);
 }
 
 std::string Program::getSourceLine(int lineNumber) {
-    // Replace this stub with your own code
-    //todo
+    auto it = sources.find(lineNumber);
+    if (it == sources.end()) return "";
+    return it->second;
 }
 
 void Program::setParsedStatement(int lineNumber, Statement *stmt) {
-    // Replace this stub with your own code
-    //todo
+    if (sources.find(lineNumber) == sources.end()) error("LINE NUMBER ERROR");
+    auto it = parsed.find(lineNumber);
+    if (it != parsed.end()) { delete it->second; }
+    parsed[lineNumber] = stmt;
 }
 
-//void Program::removeSourceLine(int lineNumber) {
-
 Statement *Program::getParsedStatement(int lineNumber) {
-   // Replace this stub with your own code
-   //todo
+    auto it = parsed.find(lineNumber);
+    if (it == parsed.end()) return nullptr;
+    return it->second;
 }
 
 int Program::getFirstLineNumber() {
-    // Replace this stub with your own code
-    //todo
+    if (sources.empty()) return -1;
+    return sources.begin()->first;
 }
 
 int Program::getNextLineNumber(int lineNumber) {
-    // Replace this stub with your own code
-    //todo
+    auto it = sources.upper_bound(lineNumber);
+    if (it == sources.end()) return -1;
+    return it->first;
 }
 
-//more func to add
-//todo
+void Program::jumpTo(int lineNumber) {
+    jumpFlag = true;
+    jumpTarget = lineNumber;
+}
 
+bool Program::hasJump() const { return jumpFlag; }
 
+int Program::takeJump() { jumpFlag = false; return jumpTarget; }

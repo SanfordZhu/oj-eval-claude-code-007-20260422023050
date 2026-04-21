@@ -57,6 +57,80 @@ void processLine(std::string line, Program &program, EvalState &state) {
     scanner.scanNumbers();
     scanner.setInput(line);
 
-    //todo
+    std::string first = scanner.nextToken();
+    if (first == "QUIT") exit(0);
+    if (scanner.getTokenType(first) == NUMBER) {
+        size_t spacePos = line.find_first_of(" \t");
+        int ln = stringToInteger(first);
+        std::string stmtText = (spacePos==std::string::npos)?"":trim(line.substr(spacePos+1));
+        if (stmtText.empty()) { program.removeSourceLine(ln); return; }
+        program.addSourceLine(ln, line);
+        TokenScanner sc2;
+        sc2.ignoreWhitespace();
+        sc2.scanNumbers();
+        sc2.setInput(stmtText);
+        std::string kw = sc2.nextToken();
+        Statement *stmt = nullptr;
+        if (kw == "REM") stmt = new RemStatement(sc2);
+        else if (kw == "LET") stmt = new LetStatement(sc2);
+        else if (kw == "PRINT") stmt = new PrintStatement(sc2);
+        else if (kw == "INPUT") stmt = new InputStatement(sc2);
+        else if (kw == "END") stmt = new EndStatement();
+        else if (kw == "GOTO") stmt = new GotoStatement(sc2);
+        else if (kw == "IF") stmt = new IfStatement(sc2);
+        else error("SYNTAX ERROR");
+        program.setParsedStatement(ln, stmt);
+        return;
+    }
+
+    if (first == "LIST") {
+        int ln = program.getFirstLineNumber();
+        while (ln != -1) {
+            std::cout << program.getSourceLine(ln) << std::endl;
+            ln = program.getNextLineNumber(ln);
+        }
+        return;
+    }
+    if (first == "CLEAR") { program.clear(); state.Clear(); return; }
+    if (first == "RUN") {
+        int ln = program.getFirstLineNumber();
+        while (ln != -1) {
+            Statement *stmt = program.getParsedStatement(ln);
+            if (!stmt) error("SYNTAX ERROR");
+            stmt->execute(state, program);
+            if (program.hasJump()) {
+                int target = program.takeJump();
+                if (target == -1) break;
+                if (program.getSourceLine(target).empty()) error("LINE NUMBER ERROR");
+                ln = target;
+            } else {
+                ln = program.getNextLineNumber(ln);
+            }
+        }
+        return;
+    }
+    if (first == "PRINT") {
+        Expression *e = parseExp(scanner);
+        int v = e->eval(state);
+        std::cout << v << std::endl;
+        delete e;
+        return;
+    }
+    if (first == "LET") {
+        Expression *e = parseExp(scanner);
+        (void) e->eval(state);
+        delete e;
+        return;
+    }
+    if (first == "INPUT") {
+        std::string name = scanner.nextToken();
+        if (scanner.getTokenType(name) != WORD) error("SYNTAX ERROR");
+        InputStatement is(scanner);
+        is.execute(state, program);
+        return;
+    }
+    if (first == "REM") return;
+    if (first == "END" || first == "GOTO" || first == "IF") error("SYNTAX ERROR");
+    error("SYNTAX ERROR");
 }
 
