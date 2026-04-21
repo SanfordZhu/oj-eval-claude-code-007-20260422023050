@@ -33,6 +33,7 @@ int main() {
                 continue;
             processLine(input, program, state);
         } catch (ErrorException &ex) {
+            if (ex.getMessage() == "__QUIT__") break;
             std::cout << ex.getMessage() << std::endl;
         }
     }
@@ -58,7 +59,7 @@ void processLine(std::string line, Program &program, EvalState &state) {
     scanner.setInput(line);
 
     std::string first = scanner.nextToken();
-    if (first == "QUIT") exit(0);
+    if (first == "QUIT") { error("__QUIT__"); }
     if (scanner.getTokenType(first) == NUMBER) {
         size_t spacePos = line.find_first_of(" \t");
         int ln = stringToInteger(first);
