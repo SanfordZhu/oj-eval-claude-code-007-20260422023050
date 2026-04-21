@@ -28,9 +28,8 @@ int main() {
     while (true) {
         try {
             std::string input;
-            getline(std::cin, input);
-            if (input.empty())
-                continue;
+            if (!std::getline(std::cin, input)) break;
+            if (input.empty()) continue;
             processLine(input, program, state);
         } catch (ErrorException &ex) {
             if (ex.getMessage() == "__QUIT__") break;
